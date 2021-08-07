@@ -29,7 +29,7 @@ import {
         evnt.target.disabled = true;
         console.log(this.pin.state);
         try {
-          const pin = await setOutPinState(this.pin.pin, this.pin.state);
+          const pin = await setOutPinState(this.pin.pin, this.pin.state ? 0 : 1);
           this.pin.state = pin.state;
           evnt.target.disabled = false;
         } catch (e) {
