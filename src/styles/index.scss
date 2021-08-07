@@ -1,0 +1,284 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&amp;display=swap");
+@import url("https://unicons.iconscout.com/release/v3.0.6/css/line.css");
+
+@import "./variables";
+
+*,
+*::after,
+*::before {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #802a41;
+  margin: 0;
+  width: 100vw;
+}
+
+#root,
+#center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  align-self: center;
+  height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ol {
+  list-style: none;
+}
+
+label {
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  position: absolute;
+  left: -9999px;
+}
+
+body {
+  font-size: 20px;
+  font-family: "Roboto Slab", serif;
+  margin: 50px 0;
+}
+
+h1 {
+  font-size: 2rem;
+  text-align: center;
+  color: $colorwhite;
+}
+
+.switches {
+  max-width: 500px;
+  width: 95%;
+  margin: 50px auto 0;
+  border-radius: 5px;
+  color: $colorwhite;
+  background: $colorblue;
+
+  li:not(:last-child) {
+    border-bottom: 1px solid $colorgray;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+  }
+
+  span:last-child {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    border-radius: 15px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.4);
+    background: $colorgray;
+    transition: all 0.3s;
+  }
+
+  span:last-child::before,
+  span:last-child::after {
+    content: "";
+    position: absolute;
+  }
+
+  span:last-child::before {
+    left: 1px;
+    top: 1px;
+    width: 24px;
+    height: 24px;
+    background: $colorwhite;
+    border-radius: 50%;
+    z-index: 1;
+    transition: transform 0.3s;
+  }
+
+  span:last-child::after {
+    top: 50%;
+    right: 8px;
+    width: 12px;
+    height: 12px;
+    transform: translateY(-50%);
+    background: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/uncheck-switcher.svg");
+    background-size: 12px 12px;
+  }
+
+  input[type="checkbox"]:checked + label span:last-child {
+    background: $colorgreen;
+  }
+
+  input[type="checkbox"]:checked + label span:last-child::before {
+    transform: translateX(24px);
+  }
+
+  input[type="checkbox"]:checked + label span:last-child::after {
+    width: 14px;
+    height: 14px;
+    left: 8px;
+    background-image: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/checkmark-switcher.svg");
+    background-size: 14px 14px;
+  }
+}
+
+.wrapper {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  animation: show_toast 1s ease forwards;
+
+  &.hide {
+    animation: hide_toast 1s ease forwards;
+  }
+
+  .toast {
+    background: #fff;
+    padding: 20px 15px 20px 20px;
+    border-radius: 10px;
+    border-left: 5px solid #2ecc71;
+    box-shadow: 1px 7px 14px -5px rgba(0, 0, 0, 0.15);
+    width: 430px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &.error {
+      border-color: #ccc;
+    }
+    .content {
+      display: flex;
+      align-items: center;
+    }
+  }
+  .content .icon {
+    font-size: 25px;
+    color: #fff;
+    height: 50px;
+    width: 50px;
+    text-align: center;
+    line-height: 50px;
+    border-radius: 50%;
+    background: #2ecc71;
+  }
+  .toast.error .content .icon {
+    background: #ccc;
+  }
+  .content .details {
+    margin-left: 15px;
+  }
+  .details span {
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .details p {
+    color: #878787;
+  }
+  .toast .close-icon {
+    color: #878787;
+    font-size: 23px;
+    cursor: pointer;
+    height: 40px;
+    width: 40px;
+    text-align: center;
+    line-height: 40px;
+    border-radius: 50%;
+    background: #f2f2f2;
+    transition: all 0.3s ease;
+  }
+  .close-icon:hover {
+    background: #efefef;
+  }
+}
+
+.button {
+  position: relative;
+  padding: 8px 16px;
+  background: #009579;
+  border: none;
+  outline: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.button:active {
+  background: #007a63;
+}
+
+.button__text {
+  font: bold 20px "Quicksand", san-serif;
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.button--loading .button__text {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.button--loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border: 4px solid transparent;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: button-loading-spinner 1s ease infinite;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0turn);
+  }
+
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .switches li::before {
+    display: none;
+  }
+}
+
+@keyframes show_toast {
+  0% {
+    transform: translateX(-100%);
+  }
+  40% {
+    transform: translateX(10%);
+  }
+  80%,
+  100% {
+    transform: translateX(20px);
+  }
+}
+@keyframes hide_toast {
+  0% {
+    transform: translateX(20px);
+  }
+  40% {
+    transform: translateX(10%);
+  }
+  80%,
+  100% {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-100%);
+  }
+}
