@@ -1,6 +1,8 @@
 import { getOutpoutPins, setOutPinState } from "@/services/gpio";
-
 import "@/styles/index.scss";
+import { filter } from "rxjs";
+import { pinSubject } from "./services/gpio";
+
 import {
   emitErrorNotification,
   emitSuccessNotification,
@@ -24,19 +26,20 @@ import {
         </label>
       </li>
     `,
+    created: function () {
+      pinSubject.pipe(filter((p) => p.pin === this.pin.pin)).subscribe((p) => {
+        this.pin.state = p.state;
+      });
+    },
     methods: {
       togglePin: async function (evnt) {
         evnt.target.disabled = true;
         try {
-          const pin = await setOutPinState(
-            this.pin.pin,
-            this.pin.state ? 0 : 1
-          );
-          this.pin.state = pin.state;
+          await setOutPinState(this.pin.pin, this.pin.state ? 0 : 1);
           evnt.target.disabled = false;
         } catch (e) {
           emitErrorNotification(
-            "Quelque chose n'a pas fonctionné",
+            "Oops!",
             "Impossible de changer l'état de cette sortie",
             e
           );
@@ -119,16 +122,9 @@ import {
       try {
         const outputPins = await getOutpoutPins();
         this.outputPins = outputPins;
-        emitSuccessNotification(
-          "Chargement terminé",
-          "Les pins sont toutes bien là"
-        );
+        emitSuccessNotification("Fini!", "Les pins sont toutes bien là");
       } catch (e) {
-        emitErrorNotification(
-          "Quelque chose n'a pas fonctionné",
-          "Impossible charger les sorties",
-          e
-        );
+        emitErrorNotification("Oops!", "Impossible charger les sorties", e);
       }
     },
     data: {
@@ -140,16 +136,9 @@ import {
         this.loadingbtn = "button button--loading";
         try {
           this.outputPins = await getOutpoutPins();
-          emitSuccessNotification(
-            "Chargement terminé",
-            "Les pins sont toutes bien là"
-          );
+          emitSuccessNotification("Fini!", "Les pins sont toutes bien là");
         } catch (e) {
-          emitErrorNotification(
-            "Quelque chose n'a pas fonctionné",
-            "Impossible charger les sorties",
-            e
-          );
+          emitErrorNotification("Oops!", "Impossible charger les sorties", e);
         }
         this.loadingbtn = "button";
       },

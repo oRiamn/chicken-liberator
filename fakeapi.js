@@ -1,9 +1,18 @@
 
 const express = require('express');
 const url = require('url');
+const expressWs = require('express-ws');
 
 const app = express();
 const port = 3000;
+const ws = expressWs(app);
+
+app.ws('/api/gpio', function(ws, req) {
+  ws.on('message', function(msg) {
+    console.log(msg);
+  });
+  console.log('socket');
+});
 
 app.use(express.json());
 app.use(function (req, res, next) {
@@ -19,8 +28,6 @@ app.use(function (req, res, next) {
   next();
 });
 
-
-
 const pins = [ 2, 4, 5, 15].map((pin)=> ({pin, state:0 }))
 
 app.get('/api/gpio/out/:pin/:state', (req, res) => {
@@ -30,8 +37,10 @@ app.get('/api/gpio/out/:pin/:state', (req, res) => {
   const oPin = pins.find((p)=> `${p.pin}` === `${pin}`);
   if(oPin){
     oPin.state = parseInt(state);
+    ws.getWss().clients.forEach((client) => {
+      client.send(JSON.stringify(oPin));
+    });
   }
-
   res.json(oPin || {});
 });
 
