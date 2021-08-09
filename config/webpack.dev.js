@@ -3,6 +3,7 @@ const { merge } = require('webpack-merge')
 
 const common = require('./webpack.common.js')
 const paths = require('./paths')
+const vars = require('./vars');
 
 module.exports = merge(common, {
   // Set the mode to development or production
@@ -41,6 +42,11 @@ module.exports = merge(common, {
 
   plugins: [
     // Only update what has changed on hot reload
-    new webpack.HotModuleReplacementPlugin(),
+    new webpack.DefinePlugin({
+      ...(Object.keys(vars.development).reduce((acc,key)=>{
+        acc[key]=JSON.stringify(vars.development[key])
+        return acc
+      }, {}))
+    })   
   ],
 })

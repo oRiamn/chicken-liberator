@@ -22,6 +22,12 @@ yarn start
 
 You can view the development server at `localhost:8080`.
 
+Use fake API for simulate ESP8266 responses: 
+
+```bash
+yarn fakeapi
+```
+
 ### Production build
 
 ```bash

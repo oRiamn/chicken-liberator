@@ -1,9 +1,11 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
+const webpack = require('webpack')
 const { merge } = require('webpack-merge')
 
 const paths = require('./paths')
 const common = require('./webpack.common.js')
+const vars = require('./vars');
 
 module.exports = merge(common, {
   mode: 'production',
@@ -39,6 +41,12 @@ module.exports = merge(common, {
       filename: 'styles/[name].css',
       chunkFilename: '[id].css',
     }),
+    new webpack.DefinePlugin({
+      ...(Object.keys(vars.production).reduce((acc,key)=>{
+        acc[key]=JSON.stringify(vars.production[key])
+        return acc
+      }, {}))
+    })
   ],
   optimization: {
     minimize: true,

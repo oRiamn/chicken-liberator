@@ -1,7 +1,0 @@
-[
-    { "pin": 2, "state": 1 },
-    { "pin": 4, "state": 0 },
-    { "pin": 5, "state": 1 },
-    { "pin": 15, "state": 0 },
-    { "pin": 0, "state": 1 }
-]
