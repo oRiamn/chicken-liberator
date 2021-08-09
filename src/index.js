@@ -53,7 +53,7 @@ import {
     data: () => ({
       loaded: false,
       notification: {
-        class: "wrapper",
+        class: "notification",
         title: "",
         message: "",
         type: "",
@@ -82,19 +82,20 @@ import {
       notificationSubject.subscribe((e) => {
         this.loaded = true;
         this.notification = e;
+        const id = e.id;
         setTimeout(() => {
-          this.close();
+          if (this.notification.id === id) {
+            this.close();
+          }
         }, 3000);
       });
     },
     methods: {
       close: function () {
-        this.notification.state = "wrapper hide";
+        this.notification.state = "notification hide";
       },
     },
   });
-
-  const p = await getOutpoutPins();
 
   const app = new Vue({
     el: "#root",
@@ -114,8 +115,24 @@ import {
       </ol>
     </div>
     `,
+    created: async function () {
+      try {
+        const outputPins = await getOutpoutPins();
+        this.outputPins = outputPins;
+        emitSuccessNotification(
+          "Chargement terminé",
+          "Les pins sont toutes bien là"
+        );
+      } catch (e) {
+        emitErrorNotification(
+          "Quelque chose n'a pas fonctionné",
+          "Impossible charger les sorties",
+          e
+        );
+      }
+    },
     data: {
-      outputPins: p,
+      outputPins: [],
       loadingbtn: "button",
     },
     methods: {

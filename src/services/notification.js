@@ -1,12 +1,20 @@
 import { Subject } from "rxjs";
+import { v4 as uuidv4 } from "uuid";
 
 export const notificationSubject = new Subject();
 
+const emit = (n) => {
+  notificationSubject.next({
+    ...n,
+    id: uuidv4(),
+  });
+};
+
 export const emitErrorNotification = (title, message, e) => {
   console.error(e);
-  notificationSubject.next({
+  emit({
     class: "uil uil-times",
-    state: "wrapper active",
+    state: "notification active",
     type: "toast error",
     title,
     message,
@@ -14,9 +22,9 @@ export const emitErrorNotification = (title, message, e) => {
 };
 
 export const emitSuccessNotification = (title, message) => {
-  notificationSubject.next({
+  emit({
     class: "uil uil-check",
-    state: "wrapper active",
+    state: "notification active",
     type: "toast success",
     title,
     message,
