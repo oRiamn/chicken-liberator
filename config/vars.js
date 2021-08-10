@@ -1,10 +1,10 @@
 module.exports = {
     development: {
-        API_URL: 'http://localhost:3000/api/gpio',
-        WS_ENDPOINT: 'ws://localhost:3000/api/gpio'
+        API_URL: 'http://localhost:3000/',
+        WS_ENDPOINT: 'ws://localhost:3000/'
     },
     production: {
-        API_URL: '/api/gpio',
+        API_URL: undefined,
         WS_ENDPOINT: undefined
     }
 }

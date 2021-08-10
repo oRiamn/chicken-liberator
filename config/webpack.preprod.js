@@ -13,7 +13,7 @@ module.exports = merge(common, {
   devtool: false,
   output: {
     path: paths.build,
-    publicPath: 'https://oriamn.github.io/chicken-liberator/',
+    publicPath: 'http://localhost:3000/',
     filename: 'js/[name].bundle.js',
   },
   module: {

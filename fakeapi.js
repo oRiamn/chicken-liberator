@@ -15,6 +15,7 @@ app.ws('/api/gpio', function(ws, req) {
 });
 
 app.use(express.json());
+app.use(express.static('dist'));
 app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
