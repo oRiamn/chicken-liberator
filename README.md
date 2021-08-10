@@ -12,8 +12,47 @@ Clone this repo and yarn install.
 yarn i
 ```
 
-## Usage
+Follow this guide for installing arduino-cli and your ESP Board
 
+https://arduino.github.io/arduino-cli/latest/installation/
+
+https://create.arduino.cc/projecthub/B45i/getting-started-with-arduino-cli-7652a5
+
+
+Install minicom for listennig COM port.
+
+```bash
+sudo apt install minicom
+```
+
+Rename `ESP8266/libraries/LibConstants/LibConstants.template.h` to `ESP8266/libraries/LibConstants/LibConstants.h` and fill constants values
+## Usage
+### ESP8266 side
+
+First go to the ino project :
+```bash
+cd ESP826
+```
+Compile the ino program
+
+```bash
+arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --libraries libraries
+```
+Allow your user to read and write your COM port :
+
+```bash
+sudo chmod a+rw /dev/ttyUSB0
+```
+Upload the compiled program to the board :
+
+```bash
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp8266:esp8266:nodemcuv2
+```
+For listennig COM port : (Ctr+A and X for quit)
+
+```bash
+minicom -D /dev/ttyUSB0 -b 115200
+``` 
 ### Development server
 
 ```bash
