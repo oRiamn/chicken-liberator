@@ -1,108 +1,43 @@
-import { getOutpoutPins, setOutPinState } from "@/services/gpio";
+import { getOutpoutPins } from "@/services/gpio";
+
+import "@/componnents/OutputPin";
+import "@/componnents/NotificationToaster";
 import "@/styles/index.scss";
-import { filter } from "rxjs";
-import { pinSubject } from "./services/gpio";
 
 import {
   emitErrorNotification,
   emitSuccessNotification,
-  notificationSubject,
 } from "./services/notification";
 
 (async () => {
-  Vue.component("output-pin", {
-    props: ["pin"],
-    template: /*html*/ `
-      <li>
-        <input 
-          type="checkbox"
-          v-bind:id="pin.pin"
-          v-bind:checked="pin.state"
-          v-on:change="togglePin"
-        >
-        <label v-bind:for="pin.pin">
-          <span>Pin {{pin.pin}}</span>
-          <span></span>
-        </label>
-      </li>
-    `,
-    created: function () {
-      pinSubject.pipe(filter((p) => p.pin === this.pin.pin)).subscribe((p) => {
-        this.pin.state = p.state;
-      });
-    },
-    methods: {
-      togglePin: async function (evnt) {
-        evnt.target.disabled = true;
-        try {
-          await setOutPinState(this.pin.pin, this.pin.state ? 0 : 1);
-          evnt.target.disabled = false;
-        } catch (e) {
-          emitErrorNotification(
-            "Oops!",
-            "Impossible de changer l'état de cette sortie",
-            e
-          );
-          setTimeout(() => {
-            evnt.target.checked = !evnt.target.checked;
-            evnt.target.disabled = false;
-          }, 500);
-        }
-      },
-    },
-  });
-
-  Vue.component("notification-toaster", {
-    data: () => ({
-      loaded: false,
-      notification: {
-        class: "notification",
-        title: "",
-        message: "",
-        type: "",
-      },
-    }),
-    props: [],
-    template: /*html*/ `
-    <div v-if="loaded" v-bind:class="notification.state">
-      <div v-bind:class="notification.type">
-        <div class="content">
-          <div class="icon">
-            <i v-bind:class="notification.class"></i>
-          </div>
-          <div class="details">
-            <span>{{notification.title}}</span>
-            <p>{{notification.message}}</p>
-          </div>
-        </div>
-        <div class="close-icon" v-on:click="close">
-          <i class="uil uil-times"></i>
-        </div>
-      </div>
-    </div>
-    `,
-    created: function () {
-      notificationSubject.subscribe((e) => {
-        this.loaded = true;
-        this.notification = e;
-        const id = e.id;
-        setTimeout(() => {
-          if (this.notification.id === id) {
-            this.close();
-          }
-        }, 3000);
-      });
-    },
-    methods: {
-      close: function () {
-        this.notification.state = "notification hide";
-      },
-    },
-  });
-
   const app = new Vue({
     el: "#root",
-    template: /*html*/ `
+    data: {
+      outputPins: [],
+      loadingbtn: "button",
+    },
+    created: async function () {
+      try {
+        const outputPins = await getOutpoutPins();
+        this.outputPins = outputPins;
+        emitSuccessNotification("Fini!", "Les pins sont toutes bien là");
+      } catch (e) {
+        emitErrorNotification("Oops!", "Impossible charger les sorties", e);
+      }
+    },
+    methods: {
+      loadPins: async function () {
+        this.loadingbtn = "button button--loading";
+        try {
+          this.outputPins = await getOutpoutPins();
+          emitSuccessNotification("Fini!", "Les pins sont toutes bien là");
+        } catch (e) {
+          emitErrorNotification("Oops!", "Impossible charger les sorties", e);
+        }
+        this.loadingbtn = "button";
+      },
+    },
+    template: /* html */ `
     <div id="center">
       <notification-toaster></notification-toaster>
       <h1>Output Pin</h1>
@@ -118,30 +53,7 @@ import {
       </ol>
     </div>
     `,
-    created: async function () {
-      try {
-        const outputPins = await getOutpoutPins();
-        this.outputPins = outputPins;
-        emitSuccessNotification("Fini!", "Les pins sont toutes bien là");
-      } catch (e) {
-        emitErrorNotification("Oops!", "Impossible charger les sorties", e);
-      }
-    },
-    data: {
-      outputPins: [],
-      loadingbtn: "button",
-    },
-    methods: {
-      loadPins: async function (evnt) {
-        this.loadingbtn = "button button--loading";
-        try {
-          this.outputPins = await getOutpoutPins();
-          emitSuccessNotification("Fini!", "Les pins sont toutes bien là");
-        } catch (e) {
-          emitErrorNotification("Oops!", "Impossible charger les sorties", e);
-        }
-        this.loadingbtn = "button";
-      },
-    },
   });
+
+  return app;
 })();

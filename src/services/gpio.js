@@ -4,12 +4,12 @@ import { emitErrorNotification } from "./notification";
 const apiUrl =
   API_URL ||
   `http://${window.location.hostname}${
-    window.location.port ? ":" + window.location.port : ""
+    window.location.port ? `:${window.location.port}` : ""
   }`;
 const wsEndpoint =
   WS_ENDPOINT ||
   `ws://${window.location.hostname}${
-    window.location.port ? ":" + window.location.port : ""
+    window.location.port ? `:${window.location.port}` : ""
   }`;
 
 export const pinSubject = new Subject();

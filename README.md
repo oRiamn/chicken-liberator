@@ -18,6 +18,13 @@ https://arduino.github.io/arduino-cli/latest/installation/
 
 https://create.arduino.cc/projecthub/B45i/getting-started-with-arduino-cli-7652a5
 
+Or using docker:
+
+```bash
+docker build -t test .
+docker run -it --device=/dev/ttyUSB0 -v $PWD/ESP8266:/root/ESP8266 test bash
+```
+
 
 Install minicom for listennig COM port.
 
