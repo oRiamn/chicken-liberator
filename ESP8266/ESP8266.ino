@@ -1,65 +1,127 @@
-#include <Regexp.h>
+/*********
+  Rui Santos
+  Complete project details at https://RandomNerdTutorials.com/esp8266-nodemcu-websocket-server-arduino/
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+*********/
+
+// Import required libraries
 #include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <LibConstants.h>
+#include <string> 
+#include <Arduino.h>
+#include <ArduinoJson.h>
 
-#define outputPinsBufferSize 5
-int outputPins[] = {
-    2,
-    4,
-    5,
-    0,
-    15};
-int outputPinValues[outputPinsBufferSize] = {};
-
+// Replace with your network credentials
 const char *ssid = LibConstants::ssid;
 const char *password = LibConstants::password;
 
-WiFiServer server(80);
-WiFiClient client;
-bool response;
+#define outputPinsBufferSize 5
+int outputPins[] = {
+  2,
+  4,
+  5,
+  0,
+  15
+};
+int outputPinValues[outputPinsBufferSize] = {};
 
-void setup()
-{
-  // initialisation de la communication série
-  Serial.begin(115200);
+bool ledState = 0;
+const int ledPin = 2;
 
-  delay(100);
+// Create AsyncWebServer object on port 80
+AsyncWebServer server(80);
+AsyncWebSocket ws("/api/gpio");
 
-  // initialisation de la sortie pour la led
-  for (byte i = 0; i < outputPinsBufferSize; i = i + 1)
-  {
-    pinMode(outputPins[i], OUTPUT);
-    changeStateOutputPin(outputPins[i], LOW);
-  }
+const char index_html[] PROGMEM = R"rawliteral(
+<!doctype html>
+<html lang="en">
 
-  Serial.println();
-  Serial.println();
-  // Connexion wifi
-  Serial.println("Connecting to " + String(ssid));
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <title>Chicken Liberator</title>
+    <link rel="icon" href="https://oriamn.github.io/chicken-liberator/favicon.png">
+    <script defer="defer" src="https://oriamn.github.io/chicken-liberator/js/runtime.bundle.js"></script>
+    <script defer="defer" src="https://oriamn.github.io/chicken-liberator/js/main.bundle.js"></script>
+    <link href="https://oriamn.github.io/chicken-liberator/styles/main.css" rel="stylesheet">
+</head>
 
-  WiFi.begin(ssid, password);
+<body>
+    <div id="root"></div>
+</body>
 
-  // connection  en cours ...
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
+</html>
+)rawliteral";
 
-  // Wifi connecter
-  Serial.println("WiFi connecter");
-
-  // Démmarrage du serveur.
-  server.begin();
-  Serial.println("Serveur demarrer !");
-
-  // Affichage de l'adresse IP
-  Serial.print("Utiliser cette adresse URL pour la connexion : http://");
-  Serial.println(WiFi.localIP());
+StaticJsonDocument<256> getPinJson(int iPin, int iState) {
+  StaticJsonDocument<256> doc;
+  doc["pin"] = iPin;
+  doc["state"] = iState;
+  return doc;
 }
 
-bool changeStateOutputPin(int pin, int state)
-{
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+}
+
+void notifyClients(int iPin, int iState) {
+  StaticJsonDocument pinDoc = getPinJson(iPin, iState);
+  ws.textAll(pinDoc.as<String>());
+}
+
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+  AwsFrameInfo *info = (AwsFrameInfo*)arg;
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+    data[len] = 0;
+    if (strcmp((char*)data, "toggle") == 0) {
+      ledState = !ledState;
+      notifyClients(ledPin, ledState);
+    }
+  }
+}
+
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+             void *arg, uint8_t *data, size_t len) {
+    switch (type) {
+      case WS_EVT_CONNECT:
+        Serial.printf("WebSocket client #%u connected from %s\r\n", client->id(), client->remoteIP().toString().c_str());
+        break;
+      case WS_EVT_DISCONNECT:
+        Serial.printf("WebSocket client #%u disconnected\r\n", client->id());
+        break;
+      case WS_EVT_DATA:
+        handleWebSocketMessage(arg, data, len);
+        break;
+      case WS_EVT_PONG:
+      case WS_EVT_ERROR:
+        break;
+  }
+}
+
+void initWebSocket() {
+  ws.onEvent(onEvent);
+  server.addHandler(&ws);
+}
+
+String processor(const String& var){
+  Serial.println(var);
+  if(var == "STATE"){
+    if (ledState){
+      return "ON";
+    }
+    else{
+      return "OFF";
+    }
+  }
+  return String();
+}
+
+bool changeStateOutputPin(int pin, int state) {
   for (byte i = 0; i < outputPinsBufferSize; i = i + 1)
   {
     if (outputPins[i] == pin)
@@ -72,100 +134,72 @@ bool changeStateOutputPin(int pin, int state)
   return false;
 }
 
-void printPinToJSON(int iPin, int iState)
-{
-  client.print("{\"pin\":" + String(iPin) + ",\"state\":" + String(iState) + "}");
-}
+void setup(){
+  // Serial port for debugging purposes
+  Serial.begin(115200);
 
-void digitalWritePin(const char *match,
-                     const unsigned int length,
-                     const MatchState &ms)
-{
-  char pin[2];
-  char state[1];
-
-  ms.GetCapture(pin, 0);
-  int iPin = atoi(pin);
-
-  ms.GetCapture(state, 1);
-  int iState = atoi(state);
-
-  if (changeStateOutputPin(iPin, iState))
-  {
-    printPinToJSON(iPin, iState);
-    response = true;
-  }
-}
-
-void getOutputPinValues(const char *match,
-                        const unsigned int length,
-                        const MatchState &ms)
-{
-  client.print('[');
   for (byte i = 0; i < outputPinsBufferSize; i = i + 1)
   {
-    printPinToJSON(outputPins[i], outputPinValues[i]);
-    if (i + 1 < outputPinsBufferSize)
-    {
-      client.print(',');
-    }
+    pinMode(outputPins[i], OUTPUT);
+    changeStateOutputPin(outputPins[i], LOW);
   }
-  client.print(']');
-  response = true;
+
+  Serial.printf("\r\r\r\nConnecting to %s\r\n", ssid);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print(".");
+  }
+
+  // Print ESP Local IP Address
+
+  Serial.printf("\r\nWifi connected : http://%s\r\n", WiFi.localIP().toString().c_str());
+
+  initWebSocket();
+
+  server.on("^\/api\/gpio\/out/([0-9]{1,2})\/([0-1])\/?$", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+      int iPin = std::stoi(request->pathArg(0).c_str());
+      int iState = std::stoi(request->pathArg(1).c_str());
+
+      Serial.println(iPin, iState);
+
+      if (changeStateOutputPin(iPin, iState)) {
+        notifyClients(iPin, iState);
+        StaticJsonDocument pinDoc = getPinJson(iPin, iState);
+        request->send(200, "application/json", pinDoc.as<String>());
+      } else {
+        notFound(request);
+      }
+  });
+
+ server.on("/api/gpio/out", HTTP_GET, [](AsyncWebServerRequest *request) {
+      StaticJsonDocument<1024> doc;
+      JsonArray array = doc.to<JsonArray>();
+      for (byte i = 0; i < outputPinsBufferSize; i = i + 1){
+        int iPin = outputPins[i];
+        int iState = outputPinValues[i];
+        StaticJsonDocument pinDoc = getPinJson(iPin, iState);
+        array.add(pinDoc.as<JsonObject>());
+      }
+      request->send(200, "application/json", doc.as<String>());
+
+  });
+
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", index_html, processor);
+  });
+
+  server.onNotFound(notFound);
+
+  // Start server
+  server.begin();
 }
 
-void loop()
-{
-  // Vérification si le client est connecter.
-  client = server.available();
-  if (!client)
-  {
-    return;
-  }
-
-  // Attendre si le client envoie des données ...
-  Serial.println("Nouveau client");
-  while (!client.available())
-  {
-    delay(1);
-  }
-
-  String request = client.readStringUntil('\r');
-  Serial.println(request);
-  client.flush();
-
-  response = false;
-
-  // Réponse
-  client.println("HTTP/1.1 200 OK");
-
-  if (request.indexOf("/api") != -1)
-  {
-    char buff[100];
-    request.toCharArray(buff, 50);
-    MatchState router(buff);
-
-    client.println("Content-Type: application/json");
-    client.println("");
-
-    router.GlobalMatch("^GET \/api\/gpio\/out\/([0-9][0-9]?)\/([0-1])\/? HTTP\/1.1$", digitalWritePin);
-    router.GlobalMatch("^GET \/api\/gpio\/out\/? HTTP\/1.1$", getOutputPinValues);
-
-    if (!response)
-    {
-      client.print("{}");
-    }
-
-    client.println("");
-  }
-  else
-  {
-    client.println("Content-Type: text/html");
-    client.println("");
-    client.println("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><meta http-equiv=\"x-ua-compatible\" content=\"ie=edge\"/><script src=\"https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js\"></script><title>Chicken Liberator</title><link rel=\"icon\" href=\"https://oriamn.github.io/chicken-liberator/favicon.png\"><script defer=\"defer\" src=\"https://oriamn.github.io/chicken-liberator/js/runtime.bundle.js\"></script><script defer=\"defer\" src=\"https://oriamn.github.io/chicken-liberator/js/main.bundle.js\"></script><link href=\"https://oriamn.github.io/chicken-liberator/styles/main.css\" rel=\"stylesheet\"></head><body><div id=\"root\"></div></body></html>");
-  }
-
-  delay(1);
-  Serial.println("Client deconnecter");
-  Serial.println("");
+void loop() {
+  ws.cleanupClients();
+  digitalWrite(ledPin, ledState);
 }

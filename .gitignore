@@ -1,3 +1,5 @@
 node_modules
 dist
+!ESP8266/libraries/LibConstants
 ESP8266/libraries/LibConstants/LibConstants.h
+ESP8266/libraries
