@@ -32,6 +32,8 @@ void setup()
     changeStateOutputPin(outputPins[i], LOW);
   }
 
+  Serial.println();
+  Serial.println();
   // Connexion wifi
   Serial.println("Connecting to " + String(ssid));
 
