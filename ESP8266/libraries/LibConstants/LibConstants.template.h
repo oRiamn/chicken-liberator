@@ -7,9 +7,10 @@
 
 #ifndef CONSTANTS_LIB_H
 #define CONSTANTS_LIB_H
-namespace LibConstants
-{
-    const char *ssid = "";
-    const char *password = "";
-}
+
+#define OUTPUT_PINS_BUFFER_SIZE 5
+#define OUTPUT_PINS  {2,4,5,0,15}
+
+#define SSID ""
+#define PASSWORD ""
 #endif

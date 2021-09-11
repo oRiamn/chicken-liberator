@@ -1,4 +1,4 @@
-const vars = require("./src/front/config/vars");
+const vars = require("./config/vars");
 
 module.exports = {
   env: {
