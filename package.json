@@ -9,7 +9,8 @@
     "start": "cross-env NODE_ENV=development webpack serve --config config/webpack.dev.js",
     "build": "cross-env NODE_ENV=production webpack --config config/webpack.prod.js",
     "build:preprod": "cross-env NODE_ENV=production webpack --config config/webpack.preprod.js",
-    "lint": "eslint . src config || true",
+    "lint": "eslint ./src --ext .js",
+    "lint:fix": "eslint ./src --ext .js --fix",
     "test": "cross-env NODE_ENV=ci jest -i",
     "test:board": "jest -i"
   },
