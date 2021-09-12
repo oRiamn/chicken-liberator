@@ -21,22 +21,16 @@ https://create.arduino.cc/projecthub/B45i/getting-started-with-arduino-cli-7652a
 Or using docker:
 
 ```bash
-docker build -t test .
-docker run -it --device=/dev/ttyUSB0 -v $PWD/ESP8266:/root/ESP8266 -v /tmp:/tmp test bash
-```
-
-
-Install picocom for listennig COM port.
-
-```bash
-sudo apt install picocom
+docker build -t chicken docker --label chicken.liberator=true
+docker run -it --device=/dev/ttyUSB0 -v $PWD/ESP8266:/root/ESP8266 -v /tmp:/tmp chicken bash
 ```
 
 Rename `ESP8266/libraries/LibConstants/LibConstants.template.h` to `ESP8266/libraries/LibConstants/LibConstants.h` and fill constants values
+
 ## Usage
 ### ESP8266 side
 
-First go to the ino project :
+First go to the ino project (not for docker usage):
 ```bash
 cd ESP826
 ```
@@ -47,13 +41,14 @@ arduino-cli compile -v --fqbn esp8266:esp8266:nodemcuv2 --libraries libraries
 ```
 or 
 ```bash
-./compile.sh
+chicken-compile
 ```
-Allow your user to read and write your COM port :
+Allow your user to read and write your COM port (not for docker usage):
 
 ```bash
 sudo chmod a+rw /dev/ttyUSB0
 ```
+
 Upload the compiled program to the board :
 
 ```bash
@@ -61,18 +56,21 @@ arduino-cli upload -p /dev/ttyUSB0 --fqbn esp8266:esp8266:nodemcuv2
 ```
 or 
 ```bash
-./upload.sh
+chicken-upload
 ```
 
-For listennig COM port : (Ctr+A and Ctrl+X for quit)
+For listennig COM port (ESP8266 log server) :
 
 ```bash
-picocom -b 115200 /dev/ttyUSB0
-``` 
-or 
-```bash
-./monitor.sh
+tail -f /tmp/esp8266-received.log
 ```
+
+if the file `/tmp/esp8266-received.log` does not exist or you do not read any log, then run the command : 
+
+```bash
+chicken-logtty
+```
+
 ### Development server
 
 ```bash
