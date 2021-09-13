@@ -4,4 +4,5 @@ ESP8266/libraries/**
 !ESP8266/libraries/**.sh
 !ESP8266/libraries/LibConstants
 ESP8266/libraries/LibConstants/LibConstants.h
+!ESP8266/libraries/ChickenLiberator
 .vscode

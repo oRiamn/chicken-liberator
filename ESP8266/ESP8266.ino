@@ -4,16 +4,15 @@
 #include <LibConstants.h>
 #include <AsyncJson.h>
 #include <ArduinoJson.h>
+#include <ChickenLiberator.h>
 
 const char *ssid = SSID;
 const char *password = PASSWORD;
 
-const int outputPins[OUTPUT_PINS_BUFFER_SIZE] = OUTPUT_PINS;
-int outputPinValues[OUTPUT_PINS_BUFFER_SIZE] = {};
-
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 AsyncWebSocket ws("/api/gpio");
+ChickenLiberator chicken;
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!doctype html>
@@ -35,7 +34,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
-StaticJsonDocument<256> getPinJson(int iPin, int iState)
+StaticJsonDocument<256> ogetPinJson(int iPin, int iState)
 {
   StaticJsonDocument<256> doc;
   doc["pin"] = iPin;
@@ -56,7 +55,7 @@ void notFound(AsyncWebServerRequest *request)
 
 void notifyClients(int iPin, int iState)
 {
-  StaticJsonDocument pinDoc = getPinJson(iPin, iState);
+  StaticJsonDocument pinDoc = ogetPinJson(iPin, iState);
   ws.textAll(pinDoc.as<String>());
 }
 
@@ -90,30 +89,13 @@ String processor(const String &var)
   return String();
 }
 
-bool changeStateOutputPin(int pin, int state)
-{
-  for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
-  {
-    if (outputPins[i] == pin)
-    {
-      digitalWrite(pin, state);
-      outputPinValues[i] = state;
-      return true;
-    }
-  }
-  return false;
-}
 
 void setup()
 {
   // Serial port for debugging purposes
   Serial.begin(115200);
 
-  for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
-  {
-    pinMode(outputPins[i], OUTPUT);
-    changeStateOutputPin(outputPins[i], LOW);
-  }
+  chicken.init();
 
   Serial.printf("\r\r\r\nSETUP Connecting to %s\r\n", ssid);
 
@@ -138,11 +120,11 @@ void setup()
               int iPin = std::stoi(request->pathArg(0).c_str());
               int iState = std::stoi(request->pathArg(1).c_str());
 
-              if (changeStateOutputPin(iPin, iState))
+              if (chicken.changeStateOutputPin(iPin, iState))
               {
                 notifyClients(iPin, iState);
                 AsyncResponseStream *response = request->beginResponseStream("application/json; charset=utf-8");
-                StaticJsonDocument pinDoc = getPinJson(iPin, iState);
+                StaticJsonDocument pinDoc = ogetPinJson(iPin, iState);
                 serializeJson(pinDoc, *response);
                 request->send(response);
 
@@ -161,17 +143,13 @@ void setup()
               logRequest(request);
 
               AsyncResponseStream *response = request->beginResponseStream("application/json; charset=utf-8");
-              DynamicJsonDocument jsonBuffer(1024);
-              JsonArray root = jsonBuffer.to<JsonArray>();
-              for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
-              {
-                int iPin = outputPins[i];
-                int iState = outputPinValues[i];
-                StaticJsonDocument pinDoc = getPinJson(iPin, iState);
-                root.add(pinDoc.as<JsonObject>());
-              }
+              StaticJsonDocument root = chicken.getPins();
               serializeJson(root, *response);
               request->send(response);
+
+              Serial.print("PIN GET ");
+              serializeJson(root, Serial);
+              Serial.println();
             });
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
