@@ -11,7 +11,8 @@ describe("ESP8266", () => {
     const wsHost = `ws://${ip}`;
     const wsApi = "api/gpio";
 
-    const outpoutPins = CCPH.OUTPUT_PINS;
+    const outpoutPins = CCPH.OUTPUT_PINS
+        .sort((p1, p2) => p1 - p2)
 
     const options = {
         method: 'GET',
@@ -114,31 +115,43 @@ describe("ESP8266", () => {
 
     })
 
-    describe.each([
-        `${apiuri}`,
-        `${apiuri}/`
-    ])("GET /%s", (u) => {
-        let resp;
-        beforeAll(async () => {
-            resp = await axios({
-                ...options,
-                url: `${apihost}/${u}`
-            });
-        })
+    describe.each([1,0])
+        ("on state %i", (state) => {
+            beforeAll(async () => {
+                await Promise.all(
+                    outpoutPins.map(pin => axios({
+                        ...options,
+                        url: `${apihost}/${apiuri}/${pin}/${state}`
+                    }))
+                )
+            })
+            describe.each([
+                `${apiuri}`,
+                `${apiuri}/`
+            ])("GET /%s", (u) => {
+                let resp;
+                beforeAll(async () => {
+                    resp = await axios({
+                        ...options,
+                        url: `${apihost}/${u}`
+                    });
+                })
 
-        it("should respond with 200 status", () => {
-            expect(resp.status).toBe(200);
-        })
+                it("should respond with 200 status", () => {
+                    expect(resp.status).toBe(200);
+                })
 
-        it("should respond with application/json content", () => {
-            expect(resp.headers['content-type']).toBe('application/json; charset=utf-8');
-        })
+                it("should respond with application/json content", () => {
+                    expect(resp.headers['content-type']).toBe('application/json; charset=utf-8');
+                })
 
-        it("should respond all pins with state", () => {
-            expect(resp.data).toStrictEqual(outpoutPins.map(p => ({
-                pin: p,
-                state: expect.any(Number)
-            })))
+                it("should respond all pins with state", () => {
+                    expect(resp.data).toStrictEqual(outpoutPins.map(p => ({
+                        pin: p,
+                        state
+                    })))
+                })
+            })
+
         })
-    })
 })

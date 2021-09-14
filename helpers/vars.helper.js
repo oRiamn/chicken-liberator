@@ -5,14 +5,18 @@ const logFile = "/tmp/esp8266-received.log";
 
 module.exports.extractLog = async (keyword) => (
     new Promise((solve) => {
-        exec(`tail -n 2 ${logFile} | grep "${keyword}" | tail -1`, (_error, stdout) => {
+        exec(`tail -n 3 ${logFile} | grep "${keyword}" | tail -1`, (_error, stdout) => {
             solve(stdout.trim());
         })
     })
 )
 
 module.exports.extractIp = async () => (
-    (await this.extractLog('SETUP')).replace(/^.*http:\/\//, '')
+    new Promise((solve) => {
+        exec(`head -10 ${logFile} | grep -a "SETUP Wifi" | tail -1`, (_error, stdout) => {
+            solve(stdout.trim().replace(/^.*http:\/\//, ''));
+        })
+    })
 )
 
 module.exports.extractCppH = (hfile) => {

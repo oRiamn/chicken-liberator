@@ -9,4 +9,5 @@ module.exports = async () => {
         process.env.CPPH = 'ESP8266/libraries/LibConstants/LibConstants.h';
     }
     process.env.ENDPOINTIP = await extractIp();
+    console.log(process.env.ENDPOINTIP)
 };

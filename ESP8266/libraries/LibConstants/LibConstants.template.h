@@ -13,4 +13,6 @@
 
 #define SSID ""
 #define PASSWORD ""
+
+#define FREEHEAPLOGTIME 3000
 #endif

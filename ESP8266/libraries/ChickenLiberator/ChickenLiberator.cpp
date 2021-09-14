@@ -1,42 +1,47 @@
 #include "./ChickenLiberator.h"
+#include "./ChickenPin.h"
 #include <Arduino.h>
-
-StaticJsonDocument<256> getPinJson(int iPin, int iState)
-{
-  StaticJsonDocument<256> doc;
-  doc["pin"] = iPin;
-  doc["state"] = iState;
-  return doc;
-}
 
 ChickenLiberator::ChickenLiberator()
 {
+  const int outputPins[OUTPUT_PINS_BUFFER_SIZE] = OUTPUT_PINS;
+  for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
+  {
+    int iPin = outputPins[i];
+    ChickenPin* oPin = new ChickenPin(iPin);
+    m_outputPinList[iPin] = oPin;
+  }
 }
 
 ChickenLiberator::~ChickenLiberator()
 {
 }
 
+// dangerous method : auto pos = m_outputPinList.find(iPin) can throw exception
+ChickenPin* ChickenLiberator::getPin(int iPin)
+{
+  auto pos = m_outputPinList.find(iPin);
+  ChickenPin* oPin = pos->second;
+  return oPin;
+}
+
 bool ChickenLiberator::changeStateOutputPin(int iPin, int iState)
 {
-  for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
+  auto pos = m_outputPinList.find(iPin);
+  if (pos == m_outputPinList.end())
   {
-    if (m_outputPins[i] == iPin)
-    {
-      digitalWrite(iPin, iState);
-      m_outputPinValues[i] = iState;
-      return true;
-    }
+    return false;
   }
-  return false;
+  return pos->second->setState(iState);
 }
 
 void ChickenLiberator::init()
 {
-  for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
+  for (auto &itr : m_outputPinList)
   {
-    pinMode(m_outputPins[i], OUTPUT);
-    changeStateOutputPin(m_outputPins[i], LOW);
+    ChickenPin* oPin = itr.second;
+    pinMode(oPin->getPin(), OUTPUT);
+    oPin->setState(LOW);
   }
 }
 
@@ -45,12 +50,9 @@ StaticJsonDocument<1024> ChickenLiberator::getPins()
   StaticJsonDocument<1024> doc;
   JsonArray outputPinDocs = doc.to<JsonArray>();
 
-  for (byte i = 0; i < OUTPUT_PINS_BUFFER_SIZE; i = i + 1)
+  for (auto &itr : m_outputPinList)
   {
-    int iPin = m_outputPins[i];
-    int iState = m_outputPinValues[i];
-
-    StaticJsonDocument pinDoc = getPinJson(iPin, iState);
+    StaticJsonDocument pinDoc = itr.second->toJson();
     outputPinDocs.add(pinDoc.as<JsonObject>());
   }
 

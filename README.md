@@ -62,7 +62,11 @@ chicken-upload
 For listennig COM port (ESP8266 log server) :
 
 ```bash
-tail -f /tmp/esp8266-received.log
+tail -f /tmp/esp8266-received.log | xargs -IL date +"%Y-%m-%d %H:%M:%S L"
+```
+
+```bash
+tail -f /tmp/esp8266-received.log | grep -a --line-buffered "FREEHEAP"
 ```
 
 if the file `/tmp/esp8266-received.log` does not exist or you do not read any log, then run the command : 

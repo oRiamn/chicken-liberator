@@ -42,7 +42,9 @@ app.use(function (req, res, next) {
 
 const logHttp = (req) => log(`HTTP ${req.method} ${req.url}`);
 
-const pins = CPPH.OUTPUT_PINS.map((pin) => ({ pin, state: 0 }))
+const pins = CPPH.OUTPUT_PINS
+  .sort((p1, p2) => p1 - p2)
+  .map((pin) => ({ pin, state: 0 }))
 
 app.get('/api/gpio/out/:pin/:state', (req, res) => {
 

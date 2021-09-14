@@ -8,6 +8,8 @@
 
 const char *ssid = SSID;
 const char *password = PASSWORD;
+int prev_freeheap = 0;
+int lps_request_time = 0;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -34,14 +36,6 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
-StaticJsonDocument<256> ogetPinJson(int iPin, int iState)
-{
-  StaticJsonDocument<256> doc;
-  doc["pin"] = iPin;
-  doc["state"] = iState;
-  return doc;
-}
-
 void logRequest(AsyncWebServerRequest *request)
 {
   Serial.printf("HTTP %s %s\r\n", request->methodToString(), request->url().c_str());
@@ -51,12 +45,6 @@ void notFound(AsyncWebServerRequest *request)
 {
   logRequest(request);
   request->send(404, "text/plain", "Not found");
-}
-
-void notifyClients(int iPin, int iState)
-{
-  StaticJsonDocument pinDoc = ogetPinJson(iPin, iState);
-  ws.textAll(pinDoc.as<String>());
 }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
@@ -88,7 +76,6 @@ String processor(const String &var)
   Serial.println(var);
   return String();
 }
-
 
 void setup()
 {
@@ -122,9 +109,11 @@ void setup()
 
               if (chicken.changeStateOutputPin(iPin, iState))
               {
-                notifyClients(iPin, iState);
+                StaticJsonDocument pinDoc = chicken.getPin(iPin)->toJson();
+
+                ws.textAll(pinDoc.as<String>());
+
                 AsyncResponseStream *response = request->beginResponseStream("application/json; charset=utf-8");
-                StaticJsonDocument pinDoc = ogetPinJson(iPin, iState);
                 serializeJson(pinDoc, *response);
                 request->send(response);
 
@@ -167,4 +156,17 @@ void setup()
 void loop()
 {
   ws.cleanupClients();
+
+  if (millis() - lps_request_time > FREEHEAPLOGTIME)
+  {
+
+    int current_freeheap = ESP.getFreeHeap();
+    if (prev_freeheap != current_freeheap)
+    {
+      prev_freeheap = current_freeheap;
+      Serial.printf("LOG FREEHEAP %d\r\n", current_freeheap);
+    }
+
+    lps_request_time = millis();
+  }
 }

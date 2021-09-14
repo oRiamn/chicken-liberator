@@ -3,20 +3,21 @@
 
 #include <LibConstants.h>
 #include <ArduinoJson.h>
+#include "./ChickenPin.h"
+#include <map>
 
-class ChickenLiberator{
-    public:
+class ChickenLiberator
+{
+public:
     ChickenLiberator();
     ~ChickenLiberator();
     void init();
     bool changeStateOutputPin(int pin, int state);
     ArduinoJson::StaticJsonDocument<1024> getPins();
-    
+    ChickenPin* getPin(int iPin);
 
-    private:
-
-    const int m_outputPins[OUTPUT_PINS_BUFFER_SIZE] = OUTPUT_PINS;
-    int m_outputPinValues[OUTPUT_PINS_BUFFER_SIZE] = {};
+private:
+    std::map<int, ChickenPin*> m_outputPinList;
 };
 
 #endif /* CHICKENLIBERATORSOURCE_H_ */
