@@ -13,7 +13,7 @@ public:
     ~ChickenLiberator();
     void init();
     bool changeStateOutputPin(int pin, int state);
-    ArduinoJson::StaticJsonDocument<1024> getPins();
+    StaticJsonDocument<256> getPins();
     ChickenPin* getPin(int iPin);
 
 private:

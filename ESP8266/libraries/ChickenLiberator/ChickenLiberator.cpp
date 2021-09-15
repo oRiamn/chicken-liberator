@@ -45,9 +45,9 @@ void ChickenLiberator::init()
   }
 }
 
-StaticJsonDocument<1024> ChickenLiberator::getPins()
+StaticJsonDocument<256> ChickenLiberator::getPins()
 {
-  StaticJsonDocument<1024> doc;
+  StaticJsonDocument<256> doc;
   JsonArray outputPinDocs = doc.to<JsonArray>();
 
   for (auto &itr : m_outputPinList)

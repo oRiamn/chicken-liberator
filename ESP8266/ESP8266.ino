@@ -2,9 +2,11 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <LibConstants.h>
+#include <HTTPConstants.h>
 #include <AsyncJson.h>
 #include <ArduinoJson.h>
 #include <ChickenLiberator.h>
+#include <ChickenLogger.h>
 
 const char *ssid = SSID;
 const char *password = PASSWORD;
@@ -36,33 +38,29 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
-void logRequest(AsyncWebServerRequest *request)
-{
-  Serial.printf("HTTP %s %s\r\n", request->methodToString(), request->url().c_str());
-}
-
-void notFound(AsyncWebServerRequest *request)
-{
-  logRequest(request);
-  request->send(404, "text/plain", "Not found");
-}
-
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len)
 {
   switch (type)
   {
   case WS_EVT_CONNECT:
-    Serial.printf("WS #%u %s connected\r\n", client->id(), client->remoteIP().toString().c_str());
+    ChickenLogger::ws(client, CONNECTED);
     break;
   case WS_EVT_DISCONNECT:
-    Serial.printf("WS #%u %s disconnected\r\n", client->id(), client->remoteIP().toString().c_str());
+    ChickenLogger::ws(client, DISCONNECTED);
     break;
   case WS_EVT_DATA:
   case WS_EVT_PONG:
   case WS_EVT_ERROR:
     break;
   }
+}
+
+void sendJsonWebserverRequest(AsyncWebServerRequest *request, const StaticJsonDocument<512> &doc)
+{
+  AsyncResponseStream *response = request->beginResponseStream(JSON_MIME_TYPE);
+  serializeJson(doc, *response);
+  request->send(response);
 }
 
 void initWebSocket()
@@ -96,13 +94,14 @@ void setup()
 
   // Print ESP Local IP Address
 
-  Serial.printf("\r\nSETUP Wifi connected : http://%s\r\n", WiFi.localIP().toString().c_str());
+  IPAddress ip = WiFi.localIP();
+  Serial.printf("\r\nSETUP Wifi connected : http://%d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
 
   initWebSocket();
 
   server.on("^\/api\/gpio\/out/([0-9]{1,2})\/([0-1])\/?$", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-              logRequest(request);
+              ChickenLogger::http(request);
 
               int iPin = std::stoi(request->pathArg(0).c_str());
               int iState = std::stoi(request->pathArg(1).c_str());
@@ -111,43 +110,39 @@ void setup()
               {
                 StaticJsonDocument pinDoc = chicken.getPin(iPin)->toJson();
 
+                sendJsonWebserverRequest(request, pinDoc);
                 ws.textAll(pinDoc.as<String>());
 
-                AsyncResponseStream *response = request->beginResponseStream("application/json; charset=utf-8");
-                serializeJson(pinDoc, *response);
-                request->send(response);
-
-                Serial.print("PIN SET ");
-                serializeJson(pinDoc, Serial);
-                Serial.println();
+                ChickenLogger::json("PIN SET", pinDoc);
               }
               else
               {
-                notFound(request);
+                request->send(404, JSON_MIME_TYPE, "{}");
               }
             });
 
   server.on("/api/gpio/out", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-              logRequest(request);
+              ChickenLogger::http(request);
 
-              AsyncResponseStream *response = request->beginResponseStream("application/json; charset=utf-8");
-              StaticJsonDocument root = chicken.getPins();
-              serializeJson(root, *response);
-              request->send(response);
+              StaticJsonDocument pinListDoc = chicken.getPins();
 
-              Serial.print("PIN GET ");
-              serializeJson(root, Serial);
-              Serial.println();
+              sendJsonWebserverRequest(request, pinListDoc);
+
+              ChickenLogger::json("PIN GET", pinListDoc);
             });
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-              logRequest(request);
-              request->send_P(200, "text/html; charset=utf-8", index_html, processor);
+              ChickenLogger::http(request);
+              request->send_P(200, HTML_MIME_TYPE, index_html, processor);
             });
 
-  server.onNotFound(notFound);
+  server.onNotFound([](AsyncWebServerRequest *request)
+                    {
+                      ChickenLogger::http(request);
+                      request->send(404, TEXT_MIME_TYPE, "Not found");
+                    });
 
   // Start server
   server.begin();

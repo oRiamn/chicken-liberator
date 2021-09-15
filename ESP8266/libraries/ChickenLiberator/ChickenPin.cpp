@@ -39,9 +39,9 @@ int ChickenPin::getPin()
     return m_pin;
 }
 
-StaticJsonDocument<256> ChickenPin::toJson()
+StaticJsonDocument<128> ChickenPin::toJson()
 {
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<128> doc;
     doc["pin"] = m_pin;
     doc["state"] = m_state;
     doc.garbageCollect();

@@ -16,7 +16,7 @@ public:
     bool setState(int state);
     int getState();
     int getPin();
-    ArduinoJson::StaticJsonDocument<256> toJson();
+    ArduinoJson::StaticJsonDocument<128> toJson();
 };
 
 #endif /* CHICKENPINSOURCE_H_ */
