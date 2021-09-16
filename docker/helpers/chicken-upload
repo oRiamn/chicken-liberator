@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-arduino-cli upload -p /dev/ttyUSB0 --fqbn esp8266:esp8266:nodemcuv2
+device=$(find /dev/ -maxdepth 1 -regex '.*tty.+' | head -n 1)
+arduino-cli upload -p $device --fqbn esp8266:esp8266:nodemcuv2
 chicken-logtty
