@@ -82,8 +82,9 @@ void setup()
 
   chicken.init();
 
-  Serial.printf("\r\r\r\nSETUP Connecting to %s\r\n", ssid);
-
+  Serial.println("\r\r\r");
+  ChickenLogger::printf("SETUP","Connecting to %s", ssid);
+  
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED)
@@ -91,11 +92,12 @@ void setup()
     delay(1000);
     Serial.print(".");
   }
+  Serial.println();
 
   // Print ESP Local IP Address
-
+  
   IPAddress ip = WiFi.localIP();
-  Serial.printf("\r\nSETUP Wifi connected : http://%d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
+  ChickenLogger::printf("SETUP","Wifi connected : http://%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 
   initWebSocket();
 
@@ -159,7 +161,7 @@ void loop()
     if (prev_freeheap != current_freeheap)
     {
       prev_freeheap = current_freeheap;
-      Serial.printf("LOG FREEHEAP %d\r\n", current_freeheap);
+      ChickenLogger::printf("LOG","FREEHEAP %d", current_freeheap);
     }
 
     lps_request_time = millis();

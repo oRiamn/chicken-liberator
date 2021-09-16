@@ -3,6 +3,21 @@
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
 
+void ChickenLogger::printf(const char *header, const char *format, ...)
+{
+    va_list arg;
+    char output_sprintf[100];
+
+    Serial.print(header);
+    Serial.print(" ");
+
+    va_start(arg, format);
+    vsprintf(output_sprintf, format, arg);
+    va_end(arg);
+
+    Serial.println(output_sprintf);
+}
+
 void ChickenLogger::setup(const char *message)
 {
     Serial.print("SETUP ");
@@ -11,16 +26,15 @@ void ChickenLogger::setup(const char *message)
 
 void ChickenLogger::http(AsyncWebServerRequest *request)
 {
-    Serial.printf("HTTP %s %s\r\n", request->methodToString(), request->url().c_str());
+    ChickenLogger::printf("HTTP", "%s %s", request->methodToString(), request->url().c_str());
 }
 
 void ChickenLogger::ws(AsyncWebSocketClient *client, WSEvent evnt)
 {
-    Serial.printf("WS #%u %s %s\r\n", client->id(), client->remoteIP().toString().c_str(), enum_str[evnt]);
+    ChickenLogger::printf("WS", "#%u %s %s", client->id(), client->remoteIP().toString().c_str(), enum_str[evnt]);
 }
 
-
-void ChickenLogger::json(const char* header, const StaticJsonDocument<256> &doc)
+void ChickenLogger::json(const char *header, const StaticJsonDocument<256> &doc)
 {
     Serial.print(header);
     Serial.print(" ");

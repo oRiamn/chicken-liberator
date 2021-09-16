@@ -17,6 +17,7 @@ class ChickenLogger
 {
 private:
 public:
+    static void printf (const char *header, const char *format, ...);
     static void setup(const char* message);
     static void http(AsyncWebServerRequest *request);
     static void ws(AsyncWebSocketClient *client, WSEvent evnt);
